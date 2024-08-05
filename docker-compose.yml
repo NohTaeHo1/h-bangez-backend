@@ -1,0 +1,123 @@
+version: '3.8'
+services:
+  eureka:
+    build:
+      context: server/service-discovery
+      dockerfile: Dockerfile
+    container_name: eureka-service
+    image: hyunji0221/bangez/eureka:latest
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/service-discovery-local
+    networks:
+      - bangez_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  gateway:
+    build:
+      context: server/service-gateway
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    image: hyunji0221/bangez/gateway:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/api-gateway-local
+    networks:
+      - bangez_network
+    depends_on:
+      eureka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  tx:
+    build:
+      context: service/tx-service
+      dockerfile: Dockerfile
+    container_name: tx-service
+    image: hyunji0221/bangez/tx:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/tx-service-local
+    networks:
+      - bangez_network
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  user:
+    build:
+      context: service/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    image: hyunji0221/bangez/user:latest
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/user-service-local
+    networks:
+      - bangez_network
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  land:
+    build:
+      context: service/land-service
+      dockerfile: Dockerfile
+    container_name: land-service
+    image: hyunji0221/bangez/land:latest
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/land-service-local
+    networks:
+      - bangez_network
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  analysis:
+    build:
+      context: service/analysis-service
+      dockerfile: Dockerfile
+    container_name: analysis-service
+    image: hyunji0221/bangez/analysis:latest
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/analysis-service-local
+    networks:
+      - bangez_network
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  chat:
+    build:
+      context: service/chat-service
+      dockerfile: Dockerfile
+    container_name: chat-service
+    image: hyunji0221/bangez/chat:latest
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://223.130.152.12:8888/chat-service-local
+    networks:
+      - bangez_network
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+networks:
+  bangez_network:

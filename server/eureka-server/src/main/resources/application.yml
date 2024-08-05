@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: service-discovery
+  profiles:
+    active: local
+  config:
+    import: optional:configserver:http://223.130.152.12:8888
